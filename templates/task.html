@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Task #{{ task.id }}{% endblock %}
+
+{% block content %}
+<h2>Task #{{ task.id }}</h2>
+
+<div class="task">
+    <div class="task-title">{{ task.title }}</div>
+    <div class="task-meta">
+        <span><strong>Owner:</strong> {{ task.owner }}</span>
+        <span><strong>Status:</strong> {{ task.status }}</span>
+        {% if task.due_date %}
+        <span><strong>Due:</strong> {{ task.due_date }}</span>
+        {% endif %}
+    </div>
+    {% if task.next_step %}
+    <div style="margin-top: 10px;">
+        <strong>Next Step:</strong> {{ task.next_step }}
+    </div>
+    {% endif %}
+    {% if task.notes %}
+    <div style="margin-top: 10px;">
+        <strong>Notes:</strong> {{ task.notes }}
+    </div>
+    {% endif %}
+    <div style="margin-top: 10px; font-size: 12px; color: #999;">
+        Created: {{ task.created_at }}
+        {% if task.completed_at %}
+        | Completed: {{ task.completed_at }}
+        {% endif %}
+    </div>
+</div>
+
+<div class="quick-links">
+    <h3>Quick Actions (save these to WhatsApp!)</h3>
+
+    <div>
+        <strong>Mark as Done:</strong>
+        <code>{{ actions.mark_done }}</code>
+        <button class="btn copy-btn" onclick="copyToClipboard('{{ actions.mark_done }}')">Copy</button>
+    </div>
+
+    <div>
+        <strong>Reassign to Ofek:</strong>
+        <code>{{ actions.reassign_ofek }}</code>
+        <button class="btn copy-btn" onclick="copyToClipboard('{{ actions.reassign_ofek }}')">Copy</button>
+    </div>
+
+    <div>
+        <strong>Reassign to Wife:</strong>
+        <code>{{ actions.reassign_wife }}</code>
+        <button class="btn copy-btn" onclick="copyToClipboard('{{ actions.reassign_wife }}')">Copy</button>
+    </div>
+
+    <div>
+        <strong>View Task:</strong>
+        <code>{{ actions.view_task }}</code>
+        <button class="btn copy-btn" onclick="copyToClipboard('{{ actions.view_task }}')">Copy</button>
+    </div>
+</div>
+
+<div class="task-actions">
+    {% if task.status == 'open' %}
+    <a href="/markDone/{{ task.id }}" class="btn btn-secondary">Mark Done</a>
+    <a href="/reassign/{{ task.id }}?to=Ofek" class="btn">Reassign to Ofek</a>
+    <a href="/reassign/{{ task.id }}?to=Wife" class="btn">Reassign to Wife</a>
+    {% endif %}
+    <a href="/open" class="btn">Back to All Tasks</a>
+</div>
+{% endblock %}
