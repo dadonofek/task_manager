@@ -182,8 +182,9 @@
 
         <div class="nav">
             <a href="/open">All Open</a>
-            <a href="/mine?owner=Ofek">My Tasks</a>
-            <a href="/mine?owner=Wife">Wife's Tasks</a>
+            {% for user in users %}
+            <a href="/mine?owner={{ user }}">{{ user }}'s Tasks</a>
+            {% endfor %}
             <a href="/today">Due Today</a>
         </div>
 

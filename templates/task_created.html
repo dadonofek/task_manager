@@ -22,17 +22,13 @@
         <button class="btn copy-btn" onclick="copyToClipboard('{{ actions.mark_done }}')">Copy</button>
     </div>
 
+    {% for user in users %}
     <div>
-        <strong>Reassign to Ofek:</strong>
-        <code>{{ actions.reassign_ofek }}</code>
-        <button class="btn copy-btn" onclick="copyToClipboard('{{ actions.reassign_ofek }}')">Copy</button>
+        <strong>Reassign to {{ user }}:</strong>
+        <code>{{ actions['reassign_' + user.lower()] }}</code>
+        <button class="btn copy-btn" onclick="copyToClipboard('{{ actions['reassign_' + user.lower()] }}')">Copy</button>
     </div>
-
-    <div>
-        <strong>Reassign to Wife:</strong>
-        <code>{{ actions.reassign_wife }}</code>
-        <button class="btn copy-btn" onclick="copyToClipboard('{{ actions.reassign_wife }}')">Copy</button>
-    </div>
+    {% endfor %}
 
     <div>
         <strong>View Task:</strong>
