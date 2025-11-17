@@ -15,4 +15,4 @@ class Config:
     BASE_URL = os.getenv('BASE_URL', 'http://localhost:5000')
 
     # Users (can be extended)
-    USERS = ['Ofek', 'Wife']
+    USERS = ['Ofek', 'Shachar']
