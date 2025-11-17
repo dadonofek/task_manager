@@ -14,6 +14,12 @@ app.config.from_object(Config)
 init_db()
 
 
+@app.context_processor
+def inject_users():
+    """Make users available to all templates."""
+    return {'users': Config.USERS}
+
+
 def parse_whatsapp_task(text: str) -> dict:
     """Parse a WhatsApp task creation message.
 
@@ -23,6 +29,8 @@ def parse_whatsapp_task(text: str) -> dict:
     Owner: Wife
     Due: Thu 20:00
     Next: Ofek submits
+    Priority: high
+    Category: work
     """
     lines = text.strip().split('\n')
     task_data = {}
@@ -46,6 +54,12 @@ def parse_whatsapp_task(text: str) -> dict:
                 task_data['due_date'] = parse_due_date(value)
             elif key == 'next':
                 task_data['next_step'] = value
+            elif key == 'priority':
+                task_data['priority'] = value.lower()
+            elif key == 'category':
+                task_data['category'] = value.lower()
+            elif key == 'notes':
+                task_data['notes'] = value
 
     return task_data
 
@@ -70,12 +84,16 @@ def parse_due_date(due_str: str) -> str:
 def generate_quick_actions(task_id: int) -> dict:
     """Generate quick action URLs for a task."""
     base = Config.BASE_URL
-    return {
+    actions = {
         'mark_done': f'{base}/markDone/{task_id}',
-        'reassign_ofek': f'{base}/reassign/{task_id}?to=Ofek',
-        'reassign_wife': f'{base}/reassign/{task_id}?to=Wife',
         'view_task': f'{base}/task/{task_id}',
     }
+
+    # Add reassign actions for each user
+    for user in Config.USERS:
+        actions[f'reassign_{user.lower()}'] = f'{base}/reassign/{task_id}?to={user}'
+
+    return actions
 
 
 # ============================================================================
@@ -118,7 +136,7 @@ def view_task(task_id):
         return jsonify({'error': 'Task not found'}), 404
 
     actions = generate_quick_actions(task_id)
-    return render_template('task.html', task=task, actions=actions, base_url=Config.BASE_URL)
+    return render_template('task.html', task=task, actions=actions, users=Config.USERS, base_url=Config.BASE_URL)
 
 
 # ============================================================================
@@ -135,7 +153,9 @@ def create_task_api():
         "owner": "Owner name",
         "due_date": "2024-01-15 20:00",  // optional
         "next_step": "Next step",         // optional
-        "notes": "Additional notes"       // optional
+        "notes": "Additional notes",      // optional
+        "priority": "high|medium|low",    // optional, default: medium
+        "category": "work|home|..."       // optional
     }
     """
     data = request.get_json()
@@ -143,13 +163,18 @@ def create_task_api():
     if not data or 'title' not in data or 'owner' not in data:
         return jsonify({'error': 'Missing required fields: title, owner'}), 400
 
-    task_id = Task.create(
-        title=data['title'],
-        owner=data['owner'],
-        due_date=data.get('due_date'),
-        next_step=data.get('next_step'),
-        notes=data.get('notes')
-    )
+    try:
+        task_id = Task.create(
+            title=data['title'],
+            owner=data['owner'],
+            due_date=data.get('due_date'),
+            next_step=data.get('next_step'),
+            notes=data.get('notes'),
+            priority=data.get('priority', 'medium'),
+            category=data.get('category')
+        )
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
 
     actions = generate_quick_actions(task_id)
 
@@ -186,6 +211,7 @@ def create_task():
                              task_id=task_id,
                              task_data=task_data,
                              actions=actions,
+                             users=Config.USERS,
                              base_url=Config.BASE_URL)
 
     # POST - form submission
@@ -288,11 +314,21 @@ def update_next_step(task_id):
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
-    """Get all tasks or filter by status/owner."""
-    status = request.args.get('status')
+    """Get all tasks or filter by status/owner/priority/category."""
+    status = request.args.get('status', 'open')
     owner = request.args.get('owner')
+    priority = request.args.get('priority')
+    category = request.args.get('category')
 
-    if owner:
+    # Use advanced filtering if priority or category specified
+    if priority or category:
+        tasks = Task.get_by_filters(
+            owner=owner,
+            priority=priority,
+            category=category,
+            status=status
+        )
+    elif owner:
         tasks = Task.get_by_owner(owner)
     elif status == 'open':
         tasks = Task.get_all_open()
@@ -326,4 +362,4 @@ def health():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=Config.DEBUG)
+    app.run(host='0.0.0.0', port=5001, debug=Config.DEBUG)
