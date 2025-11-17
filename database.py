@@ -20,7 +20,9 @@ def init_db():
             status TEXT DEFAULT 'open',
             created_at TEXT NOT NULL,
             completed_at TEXT,
-            notes TEXT
+            notes TEXT,
+            priority TEXT DEFAULT 'medium',
+            category TEXT
         )
     ''')
 
