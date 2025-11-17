@@ -1,356 +1,353 @@
-# WhatsApp Task Manager Backend
+# WhatsApp Task Manager
 
-A lightweight task management backend designed to work seamlessly with WhatsApp as the primary interface. No WhatsApp bot required - completely free!
+Manage tasks directly from your WhatsApp group. No manual links - just chat naturally with a bot that handles everything.
 
-## 🎯 Core Concept
+## 🎯 What Is This?
 
-- **WhatsApp = Your UI**: All communication happens in WhatsApp
-- **Backend = Your Brain**: Stores tasks, handles deadlines, sends reminders
-- **Quick Actions = The Bridge**: Tap links to sync WhatsApp with backend
+A task manager where you create, view, and complete tasks entirely through WhatsApp messages. The bot reads your messages, creates tasks, and lets you tap quick action links.
+
+**Perfect for families and small teams.**
 
 ## ✨ Features
 
-- ✅ Simple task creation from WhatsApp messages
-- ✅ Task assignment and ownership tracking
-- ✅ Due date management
-- ✅ Multi-step workflow support
-- ✅ Quick action URLs (mark done, reassign, update)
-- ✅ Web views: /open, /mine, /today
-- ✅ Zero WhatsApp API costs (no bot needed!)
-- ✅ Free to host (Railway, Fly.io free tiers)
+- 🤖 **WhatsApp Bot** - Auto-reads messages, creates tasks, replies with action links
+- 🎯 **Priority Levels** - High 🔴, Medium 🟡, Low 🟢 (auto-sorted)
+- 🏷️ **Categories** - Tag tasks: work, home, shopping, etc.
+- 👥 **Multi-User** - Assign to Ofek, Shachar, or anyone
+- 📅 **Due Dates** - Flexible date parsing
+- 🌐 **Web View** - Browse tasks at http://localhost:5001
+- 📱 **Quick Actions** - Tap links to mark done or reassign
 
-## 🚀 Quick Start
+## 🚀 Quick Start (5 minutes)
 
-### Installation
+### Prerequisites
+- Python 3.8+
+- Node.js 14+
+- WhatsApp on your phone
 
+### 1. Install
 ```bash
-# Clone the repository
-git clone <your-repo-url>
+git clone <your-repo>
 cd task_manager
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Run the server
-python app.py
+# Install Node dependencies
+npm install
 ```
 
-The server will start at `http://localhost:5000`
+### 2. Configure
+Create a WhatsApp group called "Task Manager" (or rename yours)
 
-### Configuration
-
-Edit `config.py` to customize:
-
+Edit `config.py` if needed:
 ```python
-BASE_URL = 'https://your-domain.com'  # Your production URL
-USERS = ['Ofek', 'Wife']  # Add more users
+USERS = ['Ofek', 'Shachar']  # Your names
+WHATSAPP_GROUP_NAME = 'Task Manager'  # Your group name
 ```
 
-## 📱 How to Use
+### 3. Run
+```bash
+./start.sh
+```
 
-### 1. Creating Tasks in WhatsApp
+This starts:
+- Flask backend on port 5001
+- WhatsApp bot (shows QR code)
 
-In your WhatsApp chat, write a task message:
+### 4. Authenticate
+1. QR code appears in terminal
+2. Open WhatsApp → Settings → Linked Devices → Link a Device
+3. Scan the QR code
+4. Done! Bot is now connected
 
+### 5. Test
+In your WhatsApp group, send:
+```
+#help
+```
+
+Bot should reply with commands! 🎉
+
+## 📱 Using the Bot
+
+### Create a Task
 ```
 #task
-Title: Upload medical docs
-Owner: Wife
-Due: Thu 20:00
-Next: Ofek submits
+Title: Buy groceries
+Owner: Ofek
+Priority: high
+Category: shopping
+Due: Tomorrow 6pm
 ```
 
-Then:
-1. Copy the task text
-2. Tap your saved shortcut: "Create Task"
-3. Or visit: `https://yourapp.com/newTask?text=<paste here>`
-
-The backend creates the task and gives you quick action links!
-
-### 2. Quick Actions
-
-Save these URL patterns as iPhone keyboard shortcuts or WhatsApp starred messages:
-
-**Mark Done:**
+Bot replies with:
 ```
-https://yourapp.com/markDone/14
-```
+✅ Task #1 Created!
 
-**Reassign:**
-```
-https://yourapp.com/reassign/14?to=Ofek
+📋 Buy groceries
+👤 Ofek
+🔴 Priority: high
+🏷️ Category: shopping
+⏰ Due: Tomorrow 6pm
+
+Quick Actions:
+✅ Mark Done: [link]
+👥 Reassign: [links]
 ```
 
-**Update Due Date:**
-```
-https://yourapp.com/updateDue/14?date=Fri 10:00
-```
+### List Tasks
+- `#tasks` or `#list` - All open tasks
+- `#my` - Your tasks
+- `#my Shachar` - Shachar's tasks
 
-### 3. Viewing Tasks
+### Quick Actions
+Tap links in bot messages to:
+- ✅ Mark task done
+- 👥 Reassign to someone
+- 🔗 View full details
 
-Open these URLs anytime:
+## 🎯 Priority Levels
 
-- **All Open Tasks**: `https://yourapp.com/open`
-- **My Tasks**: `https://yourapp.com/mine?owner=Ofek`
-- **Today's Tasks**: `https://yourapp.com/today`
-- **Specific Task**: `https://yourapp.com/task/14`
+| Priority | When to Use |
+|----------|-------------|
+| 🔴 **high** | Urgent, deadline today/tomorrow |
+| 🟡 **medium** | Normal tasks (default) |
+| 🟢 **low** | Can wait, nice-to-have |
 
-## 🔧 API Endpoints
+Tasks are automatically sorted: high → medium → low → due date
 
-### Task Management
+## 🏷️ Categories
 
-#### Create Task
-```http
-POST /api/newTask
-Content-Type: application/json
+Use any category you want:
+- `work`, `home`, `shopping`, `personal`, `finance`, `health`
 
-{
-  "title": "Upload medical docs",
-  "owner": "Wife",
-  "due_date": "2024-01-15 20:00",
-  "next_step": "Ofek submits",
-  "notes": "Passport and ID"
-}
-```
+Categories help filter and organize. Create your own!
 
-#### Get All Open Tasks
-```http
-GET /api/tasks?status=open
-```
+## 🌐 Web Interface
 
-#### Get Tasks by Owner
-```http
-GET /api/tasks?owner=Ofek
-```
+Browse tasks in your browser:
+- **All Open**: http://localhost:5001/open
+- **My Tasks**: http://localhost:5001/mine?owner=Ofek
+- **Due Today**: http://localhost:5001/today
+- **Specific Task**: http://localhost:5001/task/1
 
-#### Get Specific Task
-```http
-GET /api/task/14
-```
-
-#### Mark Task Done
-```http
-GET /markDone/14
-POST /markDone/14
-```
-
-#### Reassign Task
-```http
-GET /reassign/14?to=Wife
-POST /reassign/14
-```
-
-#### Update Due Date
-```http
-GET /updateDue/14?date=2024-01-20 15:00
-```
-
-#### Update Next Step
-```http
-GET /updateNext/14?step=Call doctor
-```
-
-## 📊 Database Schema
-
-### Tasks Table
-```sql
-CREATE TABLE tasks (
-    id INTEGER PRIMARY KEY,
-    title TEXT NOT NULL,
-    owner TEXT NOT NULL,
-    due_date TEXT,
-    next_step TEXT,
-    status TEXT DEFAULT 'open',
-    created_at TEXT NOT NULL,
-    completed_at TEXT,
-    notes TEXT
-);
-```
-
-### Task History Table
-```sql
-CREATE TABLE task_history (
-    id INTEGER PRIMARY KEY,
-    task_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    details TEXT,
-    timestamp TEXT NOT NULL
-);
-```
-
-## 🌐 Deployment
-
-### Option 1: Railway (Free Tier)
-
-1. Push code to GitHub
-2. Connect to Railway
-3. Set environment variable: `BASE_URL=https://your-app.railway.app`
-4. Deploy!
-
-### Option 2: Fly.io (Free Tier)
-
-```bash
-# Install flyctl
-curl -L https://fly.io/install.sh | sh
-
-# Launch app
-fly launch
-
-# Set secrets
-fly secrets set BASE_URL=https://your-app.fly.dev
-
-# Deploy
-fly deploy
-```
-
-### Option 3: Any Python Host
-
-Requirements:
-- Python 3.8+
-- SQLite support
-- 256MB RAM minimum
-
-## 📝 WhatsApp Workflow Examples
-
-### Example 1: Creating and Completing a Task
-
-**In WhatsApp:**
-```
-You: #task
-     Title: Buy groceries
-     Owner: Wife
-     Due: Today 6pm
-     Next: Ofek picks up
-
-[Tap "Create Task" shortcut]
-
-Backend: ✅ Task #15 created!
-         Quick actions: [links]
-
-Wife: Done!
-
-You: [Tap "Mark Done #15"]
-
-Backend: ✅ Task #15 marked as done!
-```
-
-### Example 2: Reassigning a Task
-
-**In WhatsApp:**
-```
-You: Can you handle the medical docs?
-
-Wife: Sure!
-
-You: [Tap "Reassign #14 to Wife"]
-
-Backend: ✅ Task #14 reassigned to Wife!
-```
-
-### Example 3: Checking Your Tasks
-
-**In WhatsApp:**
-```
-You: [Tap "My Tasks"]
-
-Browser opens: Shows all tasks assigned to you
-```
-
-## 🎨 Customization
+## 🔧 Configuration
 
 ### Add More Users
-
 Edit `config.py`:
 ```python
-USERS = ['Ofek', 'Wife', 'Mom', 'Brother']
+USERS = ['Ofek', 'Shachar', 'Mom', 'Dad']
 ```
 
-### Change WhatsApp Format
+### Change Group Name
+Edit `config.py`:
+```python
+WHATSAPP_GROUP_NAME = 'Family Tasks'
+```
 
-Edit the `parse_whatsapp_task()` function in `app.py` to match your preferred format.
-
-### Add Email Reminders
-
-Install a cron job:
+Or set environment variable:
 ```bash
-# Run daily at 8am
-0 8 * * * curl https://yourapp.com/api/send-reminders
+export WHATSAPP_GROUP_NAME="Family Tasks"
 ```
 
-Then implement `/api/send-reminders` endpoint to email overdue tasks.
-
-## 🔒 Security Notes
-
-- No authentication by default (add if hosting publicly)
-- SQLite is single-user (upgrade to PostgreSQL for concurrent access)
-- Use HTTPS in production
-- Set strong SECRET_KEY in production
-
-## 🛠️ Development
-
-### Run in Debug Mode
+### Change Port
+Edit `start.sh` or set:
 ```bash
-export DEBUG=true
-python app.py
+export BASE_URL="http://localhost:5002"
 ```
+
+## 📖 Documentation
+
+- **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - Complete user guide with examples
+- **[FEATURES.md](FEATURES.md)** - Technical feature documentation
+- **[WHATSAPP_SETUP.md](WHATSAPP_SETUP.md)** - Detailed WhatsApp setup
+- **[TODO.md](TODO.md)** - Upcoming features and ideas
+- **[CLAUDE.md](CLAUDE.md)** - Developer/architecture notes
+
+## 🧪 Testing
 
 ### Run Tests
 ```bash
-# Coming soon!
-pytest tests/
+# Basic tests
+python test_basic.py
+
+# Advanced tests (priority, category)
+python test_advanced.py
 ```
 
-### Database Management
+All tests should pass!
 
+### Test the Bot
+In WhatsApp:
+```
+#task
+Title: Test task
+Owner: Ofek
+Priority: high
+Category: test
+```
+
+Check if bot replies with task creation confirmation.
+
+## 🔧 Troubleshooting
+
+### Bot Not Responding
+1. Check Flask is running: `curl http://localhost:5001/health`
+2. Check group name matches config
+3. Restart: `Ctrl+C` then `./start.sh`
+
+### QR Code Won't Scan
+- Terminal window too small? Resize it
+- QR code cut off? Scroll up
+- Wrong WhatsApp app? Use phone, not web/desktop
+
+### Port Already in Use
+On macOS, disable AirPlay Receiver:
+System Settings → General → AirDrop & Handoff → Turn off AirPlay Receiver
+
+Or change port in `start.sh`
+
+### Authentication Lost
+If bot stops working:
 ```bash
-# View database
-sqlite3 tasks.db
+rm -rf .wwebjs_auth
+./start.sh
+```
+Scan QR code again.
 
-# Reset database
+## 🗄️ Database
+
+### View Database
+```bash
+sqlite3 tasks.db
+SELECT * FROM tasks WHERE status='open';
+```
+
+### Reset Database
+```bash
 rm tasks.db
 python -c "from database import init_db; init_db()"
 ```
 
-## 📖 Architecture
+### Migrate Existing Database
+If you have old database without priority/category:
+```bash
+python migrate_db.py
+```
+
+## 🚀 Deployment (Optional)
+
+Currently designed for local use. For remote deployment:
+
+1. Deploy Flask to Railway/Render/Fly.io
+2. Run WhatsApp bot on always-on machine (home server, VPS)
+3. Update `BASE_URL` in config
+4. Add authentication (not included)
+
+**Note**: WhatsApp bot needs to stay connected, so needs an always-on server.
+
+## 🏗️ Architecture
 
 ```
-WhatsApp (UI)
-    ↓ (manual: tap quick action link)
-Flask Backend (Logic)
-    ↓
-SQLite Database (Storage)
-    ↓
-Web Views (Visibility)
+WhatsApp Group
+     ↓
+WhatsApp Bot (Node.js)
+     ↓ HTTP API
+Flask Backend (Python)
+     ↓
+SQLite Database
+     ↓
+Web Interface (HTML)
 ```
+
+## 🔒 Security
+
+⚠️ **This is designed for personal/family use**
+
+Before public deployment:
+- Add user authentication
+- Use HTTPS only
+- Rate limit API endpoints
+- Use PostgreSQL instead of SQLite
+- Validate all inputs
+- Set strong SECRET_KEY
+
+## 📊 Tech Stack
+
+- **Backend**: Flask (Python)
+- **Database**: SQLite
+- **WhatsApp**: whatsapp-web.js (Node.js)
+- **Testing**: Python unittest
+- **Frontend**: HTML/CSS (Jinja2 templates)
 
 ## 🎯 Why This Works
 
-1. **Zero WhatsApp API costs**: No bot, no automation, no fees
-2. **Zero friction**: Wife never leaves WhatsApp
-3. **Structured data**: Backend tracks everything properly
-4. **Automatic reminders**: Backend can schedule notifications
-5. **Always accessible**: Check /open anytime from any device
+1. **Zero API Costs** - Uses WhatsApp Web protocol
+2. **No App Required** - Works with regular WhatsApp
+3. **Simple** - Natural conversation, not commands
+4. **Reliable** - Bot handles parsing and responses
+5. **Flexible** - Priorities, categories, due dates
+6. **Accessible** - WhatsApp + web interface
 
-## 🚀 Next Steps
+## 📝 Example Workflow
 
-1. **Deploy to Railway/Fly.io**
-2. **Set up keyboard shortcuts** on iPhone
-3. **Create first task** in WhatsApp
-4. **Tap quick action** to sync
-5. **Enjoy organized task management!**
+**Morning:**
+```
+You: #tasks
+Bot: [Lists all open tasks sorted by priority]
+```
 
-## 📄 License
+**Create Urgent Task:**
+```
+You: #task
+     Title: Fix production bug
+     Owner: Ofek
+     Priority: high
+     Category: work
+     Due: Today 5pm
 
-MIT License - Use freely!
+Bot: ✅ Task #42 created! [Quick action links]
+```
+
+**Complete Task:**
+```
+You: [Tap "Mark Done" link]
+Bot: ✅ Task #42 marked as done!
+```
+
+**Check Status:**
+```
+You: #my
+Bot: [Lists your tasks]
+```
 
 ## 🤝 Contributing
 
-Pull requests welcome! Please test thoroughly.
+Pull requests welcome! Please:
+1. Run tests: `python test_basic.py && python test_advanced.py`
+2. Update documentation
+3. Use small commits
 
-## 💬 Support
+## 📄 License
 
-Questions? Open an issue on GitHub!
+MIT License - Free to use and modify!
+
+## 💡 Tips
+
+1. **Set Priority** - Helps focus on what matters
+2. **Use Categories** - Easier to find related tasks
+3. **Review Daily** - Check `#tasks` every morning
+4. **Mark Done** - Keep list clean and current
+5. **Share Load** - Assign tasks fairly
+
+## 🆘 Need Help?
+
+1. **Quick Help**: Send `#help` in WhatsApp
+2. **User Guide**: Read [USAGE_GUIDE.md](USAGE_GUIDE.md)
+3. **Setup Issues**: Check [WHATSAPP_SETUP.md](WHATSAPP_SETUP.md)
+4. **GitHub Issues**: Report bugs and request features
 
 ---
 
-**Made with ❤️ for WhatsApp-first task management**
+**Built with ❤️ for families who want simple, effective task management**
