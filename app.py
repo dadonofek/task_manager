@@ -70,12 +70,17 @@ def parse_due_date(due_str: str) -> str:
 def generate_quick_actions(task_id: int) -> dict:
     """Generate quick action URLs for a task."""
     base = Config.BASE_URL
-    return {
+    actions = {
         'mark_done': f'{base}/markDone/{task_id}',
-        'reassign_ofek': f'{base}/reassign/{task_id}?to=Ofek',
-        'reassign_wife': f'{base}/reassign/{task_id}?to=Wife',
-        'view_task': f'{base}/task/{task_id}',
+        'view': f'{base}/task/{task_id}',
+        'reassign': {}
     }
+
+    # Generate reassign URLs for all users
+    for user in Config.USERS:
+        actions['reassign'][user] = f'{base}/reassign/{task_id}?to={user}'
+
+    return actions
 
 
 # ============================================================================
@@ -151,12 +156,15 @@ def create_task_api():
         notes=data.get('notes')
     )
 
+    # Get the created task details
+    task = Task.get_by_id(task_id)
     actions = generate_quick_actions(task_id)
 
     return jsonify({
         'success': True,
         'task_id': task_id,
         'message': f'Task #{task_id} created successfully',
+        'task': task,
         'quick_actions': actions
     }), 201
 
