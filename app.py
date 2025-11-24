@@ -1,11 +1,12 @@
 """Main Flask application for WhatsApp Task Manager."""
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template, redirect, url_for, Response
 from datetime import datetime
 from dateutil import parser as date_parser
 import re
 from database import init_db
 from models import Task
 from config import Config
+from whatsapp_integration import WhatsAppClient
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -313,6 +314,178 @@ def get_task(task_id):
         return jsonify({'error': 'Task not found'}), 404
 
     return jsonify(task.to_dict())
+
+
+# ============================================================================
+# WhatsApp Webhook Integration
+# ============================================================================
+
+@app.route('/whatsapp/webhook', methods=['POST'])
+def whatsapp_webhook():
+    """Handle incoming WhatsApp messages from Twilio.
+
+    This endpoint receives webhooks from Twilio when users send WhatsApp messages.
+
+    Configure this URL in your Twilio WhatsApp Sandbox settings:
+    https://your-domain.com/whatsapp/webhook
+    """
+    try:
+        # Parse incoming message
+        incoming_msg = WhatsAppClient.parse_incoming_message(request.form.to_dict())
+
+        from_number = incoming_msg['from_number']
+        body = incoming_msg['body'].lower()
+
+        # Handle different commands
+        if body.startswith('#task'):
+            # Create new task from WhatsApp format
+            task_data = parse_whatsapp_task(incoming_msg['body'])
+
+            if task_data.get('title') and task_data.get('owner'):
+                task_id = Task.create(**task_data)
+                actions = generate_quick_actions(task_id)
+
+                response_text = f"✓ Task #{task_id} created!\n\n"
+                response_text += f"Title: {task_data['title']}\n"
+                response_text += f"Owner: {task_data['owner']}\n"
+                if task_data.get('due_date'):
+                    response_text += f"Due: {task_data['due_date']}\n"
+                response_text += f"\nView: {actions['view_task']}"
+            else:
+                response_text = "❌ Could not create task. Please include Title and Owner."
+
+        elif body == 'my tasks' or body == 'mytasks':
+            # List user's tasks (assumes default owner 'Ofek')
+            owner = request.args.get('owner', 'Ofek')
+            tasks = Task.get_by_owner(owner)
+
+            if tasks:
+                response_text = f"*Your Open Tasks ({len(tasks)}):*\n\n"
+                for task in tasks[:5]:  # Limit to 5 tasks
+                    response_text += f"• {task.title}\n"
+                    if task.due_date:
+                        response_text += f"  Due: {task.due_date}\n"
+            else:
+                response_text = "You have no open tasks! 🎉"
+
+        elif body == 'today':
+            # List today's tasks
+            tasks = Task.get_today()
+
+            if tasks:
+                response_text = f"*Tasks Due Today ({len(tasks)}):*\n\n"
+                for task in tasks:
+                    response_text += f"• {task.title} ({task.owner})\n"
+            else:
+                response_text = "No tasks due today! ✨"
+
+        elif body == 'help':
+            response_text = """*Task Manager Commands:*
+
+📝 Create Task:
+#task
+Title: Your task
+Owner: Name
+Due: Thu 20:00
+
+📋 View Tasks:
+• "my tasks" - your tasks
+• "today" - today's tasks
+
+❓ "help" - show this menu"""
+
+        else:
+            response_text = "Send 'help' to see available commands."
+
+        # Create TwiML response
+        response_xml = WhatsAppClient.create_response(response_text)
+        return Response(response_xml, mimetype='text/xml')
+
+    except Exception as e:
+        # Log error and send friendly response
+        print(f"Error in WhatsApp webhook: {e}")
+        response_xml = WhatsAppClient.create_response(
+            "Sorry, something went wrong. Please try again."
+        )
+        return Response(response_xml, mimetype='text/xml')
+
+
+@app.route('/whatsapp/send', methods=['POST'])
+def whatsapp_send():
+    """Send a WhatsApp message programmatically.
+
+    POST JSON:
+    {
+        "to": "+1234567890",
+        "body": "Your message",
+        "media_url": "https://..." (optional)
+    }
+    """
+    try:
+        data = request.get_json()
+
+        if not data or 'to' not in data or 'body' not in data:
+            return jsonify({'error': 'Missing required fields: to, body'}), 400
+
+        client = WhatsAppClient()
+        result = client.send_message(
+            to_number=data['to'],
+            body=data['body'],
+            media_url=data.get('media_url')
+        )
+
+        return jsonify({
+            'success': True,
+            'message': 'WhatsApp message sent',
+            'details': result
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/whatsapp/notify/<int:task_id>', methods=['POST'])
+def whatsapp_notify_task(task_id):
+    """Send a WhatsApp notification for a specific task.
+
+    POST JSON:
+    {
+        "to": "+1234567890"
+    }
+    """
+    try:
+        data = request.get_json()
+
+        if not data or 'to' not in data:
+            return jsonify({'error': 'Missing required field: to'}), 400
+
+        task = Task.get_by_id(task_id)
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+
+        client = WhatsAppClient()
+        actions = generate_quick_actions(task_id)
+
+        result = client.send_task_notification(
+            to_number=data['to'],
+            task=task.to_dict(),
+            action_urls=actions
+        )
+
+        return jsonify({
+            'success': True,
+            'message': 'Task notification sent',
+            'details': result
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 # ============================================================================
