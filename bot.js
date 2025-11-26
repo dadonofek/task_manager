@@ -1,9 +1,8 @@
 /**
- * WhatsApp Task Manager Bot - Compact Edition
+ * WhatsApp Task Manager Bot - JSON Edition
  */
 
 const WhatsAppBot = require('./simple-whatsapp-bot');
-const { spawn } = require('child_process');
 const fs = require('fs');
 
 const TASKS_JSON = 'tasks.json';
@@ -17,51 +16,21 @@ const bot = new WhatsAppBot({
     }
 });
 
-function runPython(script, args = []) {
-    return new Promise((resolve, reject) => {
-        const python = spawn('python3', ['-c', script, ...args]);
-        let stdout = '';
-        let stderr = '';
-        python.stdout.on('data', (d) => stdout += d.toString());
-        python.stderr.on('data', (d) => stderr += d.toString());
-        python.on('close', (code) => {
-            code !== 0 ? reject(new Error(stderr)) : resolve(stdout.trim());
-        });
-    });
-}
-
-async function createTask(task) {
-    const code = 'import json, sys; sys.path.insert(0, "."); import apple_notes; t = json.loads(sys.argv[1]); print(json.dumps(apple_notes.create_task(t)))';
+// Load tasks from JSON
+function loadTasks() {
     try {
-        return JSON.parse(await runPython(code, [JSON.stringify(task)]));
+        return JSON.parse(fs.readFileSync(TASKS_JSON, 'utf8'));
     } catch (e) {
-        console.error('⚠️ Notes unavailable');
-        return task;
+        return [];
     }
 }
 
-async function getAllTasks() {
-    const code = 'import json, sys; sys.path.insert(0, "."); import apple_notes; print(json.dumps(apple_notes.get_all_tasks()))';
-    try {
-        return JSON.parse(await runPython(code));
-    } catch (e) {
-        return JSON.parse(fs.readFileSync(TASKS_JSON, 'utf8') || '[]');
-    }
-}
-
-async function markTaskDone(taskId) {
-    const code = 'import json, sys; sys.path.insert(0, "."); import apple_notes; print(json.dumps({"ok": apple_notes.mark_done(sys.argv[1])}))';
-    try {
-        return JSON.parse(await runPython(code, [taskId])).ok;
-    } catch (e) {
-        return false;
-    }
-}
-
-function saveJSON(tasks) {
+// Save tasks to JSON
+function saveTasks(tasks) {
     fs.writeFileSync(TASKS_JSON, JSON.stringify(tasks, null, 2));
 }
 
+// Parse task from WhatsApp message
 function parseTask(text) {
     if (!text.toLowerCase().includes('#task')) return null;
     const now = new Date();
@@ -84,6 +53,7 @@ function parseTask(text) {
     return task;
 }
 
+// Format task list for WhatsApp
 function formatList(tasks, title = 'Open Tasks') {
     if (!tasks.length) return '📭 No tasks!';
     const p = {high:0, medium:1, low:2};
@@ -100,21 +70,12 @@ function formatList(tasks, title = 'Open Tasks') {
 }
 
 async function main() {
-    console.log('🤖 WhatsApp Task Manager');
-    let cache = [];
-    try { cache = JSON.parse(fs.readFileSync(TASKS_JSON, 'utf8')); } catch(e) {}
-    console.log(`📂 ${cache.length} tasks loaded\n`);
+    console.log('🤖 WhatsApp Task Manager (JSON)');
+    let tasks = loadTasks();
+    console.log(`📂 ${tasks.length} tasks loaded\n`);
 
     await bot.start();
     console.log('✅ Ready! Send #help\n');
-
-    setInterval(async () => {
-        try {
-            cache = await getAllTasks();
-            saveJSON(cache);
-            console.log(`🔄 Synced ${cache.length} tasks`);
-        } catch(e) {}
-    }, 5*60*1000);
 
     bot.listen(async (msg) => {
         try {
@@ -124,36 +85,34 @@ async function main() {
             if (b.toLowerCase().includes('#task')) {
                 const t = parseTask(b);
                 if (!t) return msg.reply('❌ Format:\n#task\nTitle: X\nOwner: Y');
-                const created = await createTask(t);
-                cache.push(created);
-                saveJSON(cache);
+                tasks.push(t);
+                saveTasks(tasks);
                 msg.reply(`✅ Created!\n📝 ${t.title}\n👤 ${t.owner}\n${t.due?'📅 '+t.due+'\n':''}\n🆔 ${t.id}\n\n#done ${t.id}`);
             }
             else if (b.toLowerCase().match(/#(tasks|list)/)) {
-                cache = await getAllTasks();
-                saveJSON(cache);
-                msg.reply(formatList(cache.filter(t => t.status === 'open')));
+                tasks = loadTasks();
+                msg.reply(formatList(tasks.filter(t => t.status === 'open')));
             }
             else if (b.toLowerCase().includes('#mine')) {
                 const owner = b.split(/\s+/).find((w,i,a) => i>0 && a[i-1].toLowerCase()==='#mine');
                 if (!owner) return msg.reply('❓ #mine <name>');
-                cache = await getAllTasks();
-                const mine = cache.filter(t => t.status==='open' && t.owner.toLowerCase()===owner.toLowerCase());
+                tasks = loadTasks();
+                const mine = tasks.filter(t => t.status==='open' && t.owner.toLowerCase()===owner.toLowerCase());
                 msg.reply(formatList(mine, `Tasks for ${owner}`));
             }
             else if (b.toLowerCase().includes('#done')) {
                 const id = b.split(/\s+/).find(w => w.startsWith('task_'));
                 if (!id) return msg.reply('❓ #done task_xxx');
-                const t = cache.find(x => x.id === id);
+                tasks = loadTasks();
+                const t = tasks.find(x => x.id === id);
                 if (!t) return msg.reply(`❌ Not found: ${id}`);
-                await markTaskDone(id);
                 t.status = 'done';
                 t.completed_at = new Date().toISOString();
-                saveJSON(cache);
+                saveTasks(tasks);
                 msg.reply(`✅ Done!\n📝 ${t.title}\n👤 ${t.owner}`);
             }
             else if (b.toLowerCase() === '#help') {
-                msg.reply(`📝 *Task Manager*\n\n*Create:*\n#task\nTitle: X\nOwner: Y\nDue: Z\n\n*List:*\n#tasks\n#mine <name>\n\n*Done:*\n#done task_xxx`);
+                msg.reply(`📝 *Task Manager*\n\n*Create:*\n#task\nTitle: X\nOwner: Y\nDue: Z\nPriority: high/medium/low\n\n*List:*\n#tasks\n#mine <name>\n\n*Done:*\n#done task_xxx`);
             }
         } catch(e) {
             console.error('❌', e);
