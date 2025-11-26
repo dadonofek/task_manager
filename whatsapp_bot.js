@@ -25,6 +25,12 @@ const client = new Client({
     }
 });
 
+// IMPORTANT: Also listen for messages from yourself (for testing)
+client.on('message_create', async (message) => {
+    // Trigger the same handler as regular messages
+    client.emit('message', message);
+});
+
 // QR Code for authentication
 client.on('qr', (qr) => {
     console.log('\n🔐 Scan this QR code with WhatsApp on your phone:\n');
@@ -37,6 +43,21 @@ client.on('ready', async () => {
     console.log('✅ WhatsApp bot is ready!');
     console.log(`📱 Monitoring group: "${CONFIG.GROUP_NAME}"`);
     console.log(`🔗 Flask API: ${CONFIG.FLASK_API_URL}`);
+
+    // List all chats to help debug
+    try {
+        const chats = await client.getChats();
+        console.log(`\n📋 Found ${chats.length} total chats`);
+        console.log('🔍 Available groups:');
+        chats
+            .filter(chat => chat.isGroup)
+            .forEach(chat => {
+                console.log(`   - "${chat.name}" (${chat.id._serialized})`);
+            });
+    } catch (error) {
+        console.error('Error listing chats:', error);
+    }
+
     console.log('\nListening for commands...\n');
 });
 
@@ -163,17 +184,28 @@ function formatQuickActions(taskId) {
 🔗 View: ${base}/task/${taskId}`;
 }
 
+// Message counter for debugging
+let messageCount = 0;
+
 // Handle incoming messages
 client.on('message', async (message) => {
+    messageCount++;
+    console.log(`\n🔔 MESSAGE EVENT FIRED! Count: ${messageCount}`);
+
     try {
         // Only process group messages
         const chat = await message.getChat();
+
+        console.log(`\n🔍 DEBUG: Received message - isGroup: ${chat.isGroup}, chatName: "${chat.name}"`);
+
         if (!chat.isGroup) {
+            console.log('⏭️  Skipping: Not a group message');
             return;
         }
 
         // Only process messages from the configured group
         if (chat.name !== CONFIG.GROUP_NAME) {
+            console.log(`⏭️  Skipping: Group "${chat.name}" != configured "${CONFIG.GROUP_NAME}"`);
             return;
         }
 
