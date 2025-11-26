@@ -1,353 +1,673 @@
-# WhatsApp Task Manager
+# WhatsApp Task Manager - Compact Edition
 
-Manage tasks directly from your WhatsApp group. No manual links - just chat naturally with a bot that handles everything.
+**Ultra-simple task management using WhatsApp + Apple Notes. No database, no web UI, just 2 Python files.**
 
-## 🎯 What Is This?
+Perfect for personal use or small families on macOS.
 
-A task manager where you create, view, and complete tasks entirely through WhatsApp messages. The bot reads your messages, creates tasks, and lets you tap quick action links.
+## ✨ What Makes This Special
 
-**Perfect for families and small teams.**
+- 🎯 **Ultra Compact** - Just 2 Python files (~600 lines total)
+- 📱 **WhatsApp Interface** - Create and manage tasks via WhatsApp messages
+- 📝 **Apple Notes Storage** - Tasks stored as notes (visible across all your Apple devices)
+- 💾 **JSON Backup** - Automatic backup to tasks.json
+- 🔄 **Auto-Sync** - Bidirectional sync between Notes and WhatsApp every 5 minutes
+- 🚫 **No Database** - No SQLite, no SQL, no migrations
+- 🚫 **No Web Server** - No Flask, no HTML, no port conflicts
+- 🎨 **Beautiful Notes** - Tasks formatted with emoji and structure
 
-## ✨ Features
-
-- 🤖 **WhatsApp Bot** - Auto-reads messages, creates tasks, replies with action links
-- 🎯 **Priority Levels** - High 🔴, Medium 🟡, Low 🟢 (auto-sorted)
-- 🏷️ **Categories** - Tag tasks: work, home, shopping, etc.
-- 👥 **Multi-User** - Assign to Ofek, Shachar, or anyone
-- 📅 **Due Dates** - Flexible date parsing
-- 🌐 **Web View** - Browse tasks at http://localhost:5001
-- 📱 **Quick Actions** - Tap links to mark done or reassign
-
-## 🚀 Quick Start (5 minutes)
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8+
-- Node.js 14+
-- WhatsApp on your phone
+- **macOS** (required for Apple Notes)
+- **Python 3.8+**
+- **Node.js 14+** (for WhatsApp bot)
+- **WhatsApp** on your phone
 
 ### 1. Install
+
 ```bash
 git clone <your-repo>
 cd task_manager
 
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install Node dependencies
+# Install Node dependencies for WhatsApp bot
+cd simple-whatsapp-bot
 npm install
+cd ..
 ```
 
-### 2. Configure
-Create a WhatsApp group called "Task Manager" (or rename yours)
+### 2. Run
 
-Edit `config.py` if needed:
-```python
-USERS = ['Ofek', 'Shachar']  # Your names
-WHATSAPP_GROUP_NAME = 'Task Manager'  # Your group name
-```
-
-### 3. Run
 ```bash
-./start.sh
+python3 task_bot.py
 ```
 
-This starts:
-- Flask backend on port 5001
-- WhatsApp bot (shows QR code)
+Or listen to specific WhatsApp group:
+```bash
+python3 task_bot.py --group "Task Manager"
+```
 
-### 4. Authenticate
+### 3. Authenticate
+
 1. QR code appears in terminal
 2. Open WhatsApp → Settings → Linked Devices → Link a Device
 3. Scan the QR code
-4. Done! Bot is now connected
+4. Done! Bot is ready
 
-### 5. Test
-In your WhatsApp group, send:
+### 4. Test
+
+Send this to yourself or your group in WhatsApp:
 ```
 #help
 ```
 
-Bot should reply with commands! 🎉
+Bot should reply with available commands! 🎉
 
-## 📱 Using the Bot
+## 📱 How to Use
 
 ### Create a Task
+
+Send this in WhatsApp:
 ```
 #task
 Title: Buy groceries
 Owner: Ofek
-Priority: high
-Category: shopping
 Due: Tomorrow 6pm
+Next: Make shopping list
+Priority: high
 ```
 
-Bot replies with:
+Bot replies:
 ```
-✅ Task #1 Created!
+✅ Task created!
 
-📋 Buy groceries
-👤 Ofek
-🔴 Priority: high
-🏷️ Category: shopping
-⏰ Due: Tomorrow 6pm
+📝 Buy groceries
+👤 Owner: Ofek
+📅 Due: Tomorrow 6pm
 
-Quick Actions:
-✅ Mark Done: [link]
-👥 Reassign: [links]
+🆔 ID: task_20251126_143052
+
+Use '#done task_20251126_143052' to mark complete
 ```
 
-### List Tasks
-- `#tasks` or `#list` - All open tasks
-- `#my` - Your tasks
-- `#my Shachar` - Shachar's tasks
+**The task now appears in your Apple Notes app in the "Tasks" folder!**
 
-### Quick Actions
-Tap links in bot messages to:
-- ✅ Mark task done
-- 👥 Reassign to someone
-- 🔗 View full details
+### List All Tasks
 
-## 🎯 Priority Levels
-
-| Priority | When to Use |
-|----------|-------------|
-| 🔴 **high** | Urgent, deadline today/tomorrow |
-| 🟡 **medium** | Normal tasks (default) |
-| 🟢 **low** | Can wait, nice-to-have |
-
-Tasks are automatically sorted: high → medium → low → due date
-
-## 🏷️ Categories
-
-Use any category you want:
-- `work`, `home`, `shopping`, `personal`, `finance`, `health`
-
-Categories help filter and organize. Create your own!
-
-## 🌐 Web Interface
-
-Browse tasks in your browser:
-- **All Open**: http://localhost:5001/open
-- **My Tasks**: http://localhost:5001/mine?owner=Ofek
-- **Due Today**: http://localhost:5001/today
-- **Specific Task**: http://localhost:5001/task/1
-
-## 🔧 Configuration
-
-### Add More Users
-Edit `config.py`:
-```python
-USERS = ['Ofek', 'Shachar', 'Mom', 'Dad']
+```
+#tasks
 ```
 
-### Change Group Name
-Edit `config.py`:
-```python
-WHATSAPP_GROUP_NAME = 'Family Tasks'
+or
+
+```
+#list
 ```
 
-Or set environment variable:
-```bash
-export WHATSAPP_GROUP_NAME="Family Tasks"
+Bot replies with all open tasks, sorted by priority (high → medium → low).
+
+### List Your Tasks
+
+```
+#mine Ofek
 ```
 
-### Change Port
-Edit `start.sh` or set:
-```bash
-export BASE_URL="http://localhost:5002"
+Shows only tasks assigned to Ofek.
+
+### Mark Task Done
+
+```
+#done task_20251126_143052
 ```
 
-## 📖 Documentation
+Updates the task in both Apple Notes and the backup file.
 
-- **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - Complete user guide with examples
-- **[FEATURES.md](FEATURES.md)** - Technical feature documentation
-- **[WHATSAPP_SETUP.md](WHATSAPP_SETUP.md)** - Detailed WhatsApp setup
-- **[TODO.md](TODO.md)** - Upcoming features and ideas
-- **[CLAUDE.md](CLAUDE.md)** - Developer/architecture notes
+### Get Help
+
+```
+#help
+```
+
+Shows all available commands.
+
+## 📝 What Happens Behind the Scenes
+
+1. **You send #task message** → Bot parses it
+2. **Bot creates Apple Note** → Formatted with emoji and structure
+3. **Bot saves to JSON** → Backup in tasks.json
+4. **Bot replies** → Confirmation with task ID
+
+**Every 5 minutes:**
+- Bot syncs from Apple Notes (source of truth)
+- Updates JSON backup
+- You can edit tasks directly in Apple Notes app!
+
+## 🎨 How Tasks Look in Apple Notes
+
+```
+🔴 [HIGH] Buy groceries
+
+👤 Owner: Ofek
+📅 Due: Tomorrow 6pm
+➡️ Next: Make shopping list
+
+Status: ⚪ Open
+Created: 2025-11-26 14:30
+ID: task_20251126_143052
+```
+
+- 🔴 Red for high priority
+- 🟡 Yellow for medium priority
+- 🟢 Green for low priority
+- ⚪ Open status / ✅ Done status
+
+## 📋 Task Format
+
+### Required Fields
+- `Title:` - What needs to be done
+- `Owner:` - Who is responsible
+
+### Optional Fields
+- `Due:` - When it's due (natural language OK: "tomorrow", "next Friday 5pm")
+- `Next:` - Next action step
+- `Priority:` - high, medium, or low (default: medium)
+- `Notes:` - Additional details
+
+### Example
+```
+#task
+Title: Upload medical documents
+Owner: Wife
+Due: Thu 20:00
+Next: Scan passport and ID
+Priority: high
+Notes: Remember both pages of ID
+```
+
+## 🗂️ File Structure
+
+```
+task_manager/
+├── task_bot.py              # Main bot (350 lines) - WhatsApp + orchestration
+├── apple_notes.py           # Apple Notes client (320 lines) - JXA wrapper
+├── tasks.json               # Auto-generated backup
+├── simple-whatsapp-bot/     # WhatsApp integration (reusable package)
+└── README.md                # This file
+```
+
+**Total implementation: 2 files, ~670 lines of Python.**
+
+## 🔧 Architecture
+
+```
+WhatsApp Messages
+       ↓
+   task_bot.py (parses messages)
+       ↓
+   apple_notes.py (JXA wrapper)
+       ↓
+   osascript -l JavaScript
+       ↓
+   Apple Notes App (macOS)
+       ↓
+   tasks.json (backup)
+```
+
+**Key Design Decisions:**
+- **Apple Notes = Primary Storage** - Source of truth, syncs across devices
+- **JSON = Backup** - Fast reads, offline access
+- **No Database** - Simpler, fewer dependencies
+- **No Web UI** - Apple Notes app is the UI
+
+## 🎯 Commands Reference
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `#task` | Create new task | See format above |
+| `#tasks` or `#list` | Show all open tasks | `#tasks` |
+| `#mine <name>` | Show tasks for owner | `#mine Ofek` |
+| `#done <id>` | Mark task complete | `#done task_20251126_143052` |
+| `#help` | Show help message | `#help` |
+
+## 💡 Pro Tips
+
+### 1. Edit in Apple Notes
+You can edit tasks directly in the Apple Notes app! Changes sync back to WhatsApp every 5 minutes.
+
+### 2. Use Siri
+"Hey Siri, show me my Tasks notes" → Opens your task list
+
+### 3. iPhone Widgets
+Add Apple Notes widget to your home screen → Always see your tasks
+
+### 4. Natural Language Dates
+These all work:
+- "Tomorrow 6pm"
+- "Next Friday at 3"
+- "Thu 20:00"
+- "Dec 25"
+
+### 5. Group vs. Personal
+- Use `--group "Task Manager"` to listen only to specific group
+- Omit `--group` to listen to all WhatsApp messages
+
+## 🔄 Auto-Sync
+
+The bot automatically syncs every 5 minutes:
+
+1. Reads all notes from Apple Notes "Tasks" folder
+2. Parses them back to task dictionaries
+3. Compares with local cache
+4. Updates JSON backup
+5. Detects if you edited notes directly
+
+**This means you can:**
+- Edit tasks in Apple Notes app
+- Changes reflect in WhatsApp
+- Edit on iPhone, see changes in bot
+- Full bidirectional sync
 
 ## 🧪 Testing
 
-### Run Tests
-```bash
-# Basic tests
-python test_basic.py
-
-# Advanced tests (priority, category)
-python test_advanced.py
-```
-
-All tests should pass!
-
-### Test the Bot
-In WhatsApp:
+### Test Task Creation
 ```
 #task
 Title: Test task
-Owner: Ofek
+Owner: Me
 Priority: high
-Category: test
 ```
 
-Check if bot replies with task creation confirmation.
+Check:
+1. Bot replies with confirmation
+2. Note appears in Apple Notes "Tasks" folder
+3. tasks.json file is created/updated
+
+### Test Listing
+```
+#tasks
+```
+
+Should show the task you just created.
+
+### Test Completion
+```
+#done task_xxxxx
+```
+
+(Use the actual task ID from creation)
+
+Check:
+1. Bot confirms completion
+2. Note status changes to "✅ Done" in Apple Notes
+3. tasks.json updated
+
+### Test Sync
+1. Open Apple Notes app
+2. Edit a task note manually
+3. Wait 5 minutes (or restart bot)
+4. Send `#tasks` in WhatsApp
+5. Should reflect your changes
 
 ## 🔧 Troubleshooting
 
 ### Bot Not Responding
-1. Check Flask is running: `curl http://localhost:5001/health`
-2. Check group name matches config
-3. Restart: `Ctrl+C` then `./start.sh`
+
+**Check bot is running:**
+```bash
+# Should show task_bot.py process
+ps aux | grep task_bot
+```
+
+**Check for errors:**
+- Look at terminal output
+- Python errors will be printed
+
+**Restart:**
+```bash
+# Kill bot
+Ctrl+C
+
+# Restart
+python3 task_bot.py
+```
+
+### Apple Notes Not Working
+
+**Error: "macOS required"**
+- This bot only works on macOS
+- Apple Notes uses macOS-specific JXA (JavaScript for Automation)
+
+**Error: "osascript not found"**
+- You're not on macOS
+- osascript is built into macOS
+
+**Error: "Folder 'Tasks' not found"**
+- Don't worry! Bot auto-creates it on first task
+
+**Permission Denied:**
+1. System Settings → Privacy & Security → Automation
+2. Find Terminal (or your terminal app)
+3. Enable access to Notes
+
+### WhatsApp Authentication Lost
+
+If bot stops receiving messages:
+
+```bash
+# Remove auth cache
+rm -rf .wwebjs_auth .wwebjs_cache
+
+# Restart bot
+python3 task_bot.py
+
+# Scan QR code again
+```
 
 ### QR Code Won't Scan
-- Terminal window too small? Resize it
-- QR code cut off? Scroll up
-- Wrong WhatsApp app? Use phone, not web/desktop
 
-### Port Already in Use
-On macOS, disable AirPlay Receiver:
-System Settings → General → AirDrop & Handoff → Turn off AirPlay Receiver
+- **Terminal too small?** Make it bigger
+- **QR code cut off?** Scroll up
+- **Still doesn't work?** Try different terminal (Terminal.app, iTerm2)
 
-Or change port in `start.sh`
+### Tasks.json Corrupted
 
-### Authentication Lost
-If bot stops working:
 ```bash
-rm -rf .wwebjs_auth
-./start.sh
+# Backup old file
+mv tasks.json tasks.json.backup
+
+# Bot will recreate from Apple Notes on next sync
+python3 task_bot.py
 ```
-Scan QR code again.
 
-## 🗄️ Database
+## 🚀 Advanced Usage
 
-### View Database
+### Run in Background
+
+**Using nohup:**
 ```bash
-sqlite3 tasks.db
-SELECT * FROM tasks WHERE status='open';
+nohup python3 task_bot.py --group "Tasks" > bot.log 2>&1 &
 ```
 
-### Reset Database
+**Using screen:**
 ```bash
-rm tasks.db
-python -c "from database import init_db; init_db()"
+screen -S taskbot
+python3 task_bot.py
+# Press Ctrl+A, then D to detach
 ```
 
-### Migrate Existing Database
-If you have old database without priority/category:
+**To reconnect:**
 ```bash
-python migrate_db.py
+screen -r taskbot
 ```
 
-## 🚀 Deployment (Optional)
+### Multiple Groups
 
-Currently designed for local use. For remote deployment:
+Run separate bots for different groups:
 
-1. Deploy Flask to Railway/Render/Fly.io
-2. Run WhatsApp bot on always-on machine (home server, VPS)
-3. Update `BASE_URL` in config
-4. Add authentication (not included)
+```bash
+# Terminal 1
+python3 task_bot.py --group "Work Tasks"
 
-**Note**: WhatsApp bot needs to stay connected, so needs an always-on server.
-
-## 🏗️ Architecture
-
-```
-WhatsApp Group
-     ↓
-WhatsApp Bot (Node.js)
-     ↓ HTTP API
-Flask Backend (Python)
-     ↓
-SQLite Database
-     ↓
-Web Interface (HTML)
+# Terminal 2
+python3 task_bot.py --group "Family Tasks"
 ```
 
-## 🔒 Security
+Each bot maintains its own:
+- Apple Notes folder ("Tasks" by default)
+- JSON backup (tasks.json)
+- WhatsApp session
 
-⚠️ **This is designed for personal/family use**
+### Custom Notes Folder
 
-Before public deployment:
-- Add user authentication
-- Use HTTPS only
-- Rate limit API endpoints
-- Use PostgreSQL instead of SQLite
-- Validate all inputs
-- Set strong SECRET_KEY
-
-## 📊 Tech Stack
-
-- **Backend**: Flask (Python)
-- **Database**: SQLite
-- **WhatsApp**: whatsapp-web.js (Node.js)
-- **Testing**: Python unittest
-- **Frontend**: HTML/CSS (Jinja2 templates)
-
-## 🎯 Why This Works
-
-1. **Zero API Costs** - Uses WhatsApp Web protocol
-2. **No App Required** - Works with regular WhatsApp
-3. **Simple** - Natural conversation, not commands
-4. **Reliable** - Bot handles parsing and responses
-5. **Flexible** - Priorities, categories, due dates
-6. **Accessible** - WhatsApp + web interface
-
-## 📝 Example Workflow
-
-**Morning:**
-```
-You: #tasks
-Bot: [Lists all open tasks sorted by priority]
+Edit `task_bot.py`:
+```python
+NOTES_FOLDER = 'My Custom Folder'
 ```
 
-**Create Urgent Task:**
-```
-You: #task
-     Title: Fix production bug
-     Owner: Ofek
-     Priority: high
-     Category: work
-     Due: Today 5pm
+### Change Sync Interval
 
-Bot: ✅ Task #42 created! [Quick action links]
+Edit `task_bot.py`:
+```python
+SYNC_INTERVAL = 600  # 10 minutes instead of 5
 ```
 
-**Complete Task:**
-```
-You: [Tap "Mark Done" link]
-Bot: ✅ Task #42 marked as done!
+## 📊 Data Storage
+
+### Apple Notes
+- **Location**: Apple Notes app → "Tasks" folder
+- **Format**: HTML notes with emoji and formatting
+- **Sync**: Via iCloud across all your Apple devices
+- **Backup**: Included in iCloud and Time Machine backups
+
+### JSON Backup
+- **Location**: `tasks.json` in project directory
+- **Format**: JSON array of task objects
+- **Purpose**: Fast reads, offline access, fallback if Notes unavailable
+- **Backup**: Include in your own backup strategy
+
+### Example tasks.json
+```json
+[
+  {
+    "id": "task_20251126_143052",
+    "title": "Buy groceries",
+    "owner": "Ofek",
+    "due": "Tomorrow 6pm",
+    "next": "Make shopping list",
+    "priority": "high",
+    "status": "open",
+    "created_at": "2025-11-26T14:30:52",
+    "completed_at": null,
+    "note_id": "x-coredata://ABCD-1234"
+  }
+]
 ```
 
-**Check Status:**
+## 🎨 Customization
+
+### Add Custom Fields
+
+Edit `task_bot.py` → `parse_task()` function:
+
+```python
+field_map = {
+    'title': 'title',
+    'owner': 'owner',
+    'due': 'due',
+    'next': 'next',
+    'priority': 'priority',
+    'notes': 'notes',
+    'location': 'location',  # Add this
+    'cost': 'cost'            # Add this
+}
 ```
-You: #my
-Bot: [Lists your tasks]
+
+Then in WhatsApp:
 ```
+#task
+Title: Buy coffee
+Owner: Me
+Location: Trader Joe's
+Cost: $15
+```
+
+### Change Emoji
+
+Edit `apple_notes.py` → `create_task()` method:
+
+```python
+priority_emoji = {
+    'high': '🔥',      # Change from 🔴
+    'medium': '⭐',    # Change from 🟡
+    'low': '💤'        # Change from 🟢
+}
+```
+
+### Custom Reply Messages
+
+Edit `task_bot.py` → `handle_create_task()` method:
+
+```python
+reply = f"🎉 Boom! Task created!\n\n"  # Customize this
+reply += f"📝 {task['title']}\n"
+# ... rest of reply
+```
+
+## 🔒 Security Notes
+
+### This is for Personal/Family Use
+
+⚠️ **Not designed for:**
+- Public deployment
+- Untrusted users
+- Production systems
+- Large teams
+
+⚠️ **No built-in:**
+- Authentication
+- Authorization
+- Rate limiting
+- Input sanitization (basic only)
+- Encryption
+
+### Protect Your Data
+
+1. **Don't commit sensitive data:**
+   ```bash
+   # Already in .gitignore:
+   tasks.json
+   .wwebjs_auth/
+   .wwebjs_cache/
+   ```
+
+2. **Backup regularly:**
+   - tasks.json
+   - Apple Notes (via iCloud/Time Machine)
+
+3. **Keep bot private:**
+   - Don't share WhatsApp session
+   - Don't expose to internet
+   - Run on trusted machine only
+
+## 📈 Limitations
+
+### Current Constraints
+
+- **macOS only** - Requires Apple Notes (uses JXA)
+- **Single user per bot** - One WhatsApp connection per bot instance
+- **5-minute sync** - Not real-time (by design, to avoid excessive API calls)
+- **Text only** - No image/file attachments (yet)
+- **Simple search** - No full-text search (just list/filter)
+
+### When to Upgrade
+
+Consider more robust solution if you need:
+- **>500 tasks** - SQLite would be faster
+- **Multiple users** - Need proper database with permissions
+- **Real-time sync** - Need websockets or polling
+- **Complex queries** - Need SQL for joins/aggregations
+- **Web UI** - Need Flask/React
+- **Cross-platform** - Need Windows/Linux support
+
+See [TODO.md](TODO.md) for planned features and workarounds.
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+simple-whatsapp-bot/    # Reusable WhatsApp bot package
+├── src/
+│   └── WhatsAppBot.js  # Main bot class
+├── examples/           # Usage examples
+└── package.json
+
+apple_notes.py          # Apple Notes integration
+├── AppleNotesClient    # Main client class
+├── _run_jxa()          # Execute JXA scripts
+├── create_task()       # Create note
+├── get_all_tasks()     # Read notes
+└── mark_done()         # Update note
+
+task_bot.py             # Task manager bot
+├── TaskManager         # Main orchestrator
+├── parse_task()        # Parse WhatsApp messages
+├── handle_*()          # Command handlers
+└── sync_notes_to_json() # Sync logic
+```
+
+### Key Technologies
+
+- **JXA** (JavaScript for Automation) - macOS scripting
+- **whatsapp-web.js** - WhatsApp Web protocol
+- **subprocess** - Execute osascript
+- **threading** - Background sync timer
+- **json** - Data persistence
+
+### Code Style
+
+- **Simple > Clever** - Readable code over optimizations
+- **Fail gracefully** - Degrade to JSON if Notes unavailable
+- **Log everything** - Print status to terminal
+- **No magic** - Explicit is better than implicit
 
 ## 🤝 Contributing
 
-Pull requests welcome! Please:
-1. Run tests: `python test_basic.py && python test_advanced.py`
-2. Update documentation
-3. Use small commits
+Want to improve this? Here's how:
+
+1. **Fork** the repo
+2. **Create branch**: `git checkout -b feature/my-feature`
+3. **Make changes** - Keep it simple!
+4. **Test thoroughly** - Create, list, complete tasks
+5. **Submit PR** - Explain what and why
+
+### Ideas Welcome
+
+See [TODO.md](TODO.md) for planned features. Have other ideas? Open an issue!
 
 ## 📄 License
 
-MIT License - Free to use and modify!
+MIT License - Use freely, modify as needed, no attribution required.
 
-## 💡 Tips
+## 💡 Why This Design?
 
-1. **Set Priority** - Helps focus on what matters
-2. **Use Categories** - Easier to find related tasks
-3. **Review Daily** - Check `#tasks` every morning
-4. **Mark Done** - Keep list clean and current
-5. **Share Load** - Assign tasks fairly
+### The Problem
 
-## 🆘 Need Help?
+Most task managers are either:
+1. **Too complex** - Need server, database, authentication, deployment
+2. **Too limited** - Just a todo list, no collaboration
+3. **Platform-locked** - iOS only, Android only, web only
 
-1. **Quick Help**: Send `#help` in WhatsApp
-2. **User Guide**: Read [USAGE_GUIDE.md](USAGE_GUIDE.md)
-3. **Setup Issues**: Check [WHATSAPP_SETUP.md](WHATSAPP_SETUP.md)
-4. **GitHub Issues**: Report bugs and request features
+### The Solution
+
+This bot is intentionally **ultra-simple**:
+- ✅ No database setup - Just Apple Notes
+- ✅ No web server - Just Python script
+- ✅ No deployment - Runs on your Mac
+- ✅ No app install - Uses WhatsApp you already have
+- ✅ No cloud costs - Everything local
+- ✅ No learning curve - Natural conversation
+
+### Perfect For
+
+- Small families coordinating tasks
+- Personal task tracking across devices
+- Quick task capture from WhatsApp
+- People who love Apple Notes
+- Developers who want simple, hackable code
+
+### Not For
+
+- Large teams (no permissions/roles)
+- Public/commercial use (no auth)
+- Windows/Linux (macOS only)
+- Mission-critical systems (no HA/redundancy)
+
+## 🎉 Success Stories
+
+Using this bot? Share your experience! Open an issue with tag `showcase`.
 
 ---
 
-**Built with ❤️ for families who want simple, effective task management**
+**Built with ❤️ for people who value simplicity over features**
+
+*Questions? Check [TODO.md](TODO.md) for roadmap or open an issue!*
