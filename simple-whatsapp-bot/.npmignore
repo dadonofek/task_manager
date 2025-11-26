@@ -1,0 +1,12 @@
+# Don't publish these to npm
+examples/
+.wwebjs_auth/
+.wwebjs_cache/
+.env
+.env.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
+.nyc_output/
