@@ -49,6 +49,7 @@ Thumbs.db
 
 # Logs
 *.log
+bot.log
 
 # Node.js
 node_modules/
@@ -60,3 +61,6 @@ package-lock.json
 # WhatsApp authentication
 .wwebjs_auth/
 .wwebjs_cache/
+
+# Task data (user-specific)
+tasks.json

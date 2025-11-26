@@ -1,12 +1,12 @@
 # WhatsApp Task Manager - Compact Edition
 
-**Ultra-simple task management using WhatsApp + Apple Notes. No database, no web UI, just 2 Python files.**
+**Ultra-simple task management using WhatsApp + Apple Notes. No database, no web UI, just clean and simple code.**
 
 Perfect for personal use or small families on macOS.
 
 ## ✨ What Makes This Special
 
-- 🎯 **Ultra Compact** - Just 2 Python files (~600 lines total)
+- 🎯 **Ultra Compact** - Just 1 JavaScript bot + 1 Python helper (~600 lines total)
 - 📱 **WhatsApp Interface** - Create and manage tasks via WhatsApp messages
 - 📝 **Apple Notes Storage** - Tasks stored as notes (visible across all your Apple devices)
 - 💾 **JSON Backup** - Automatic backup to tasks.json
@@ -19,12 +19,16 @@ Perfect for personal use or small families on macOS.
 
 ### Prerequisites
 - **macOS** (required for Apple Notes)
-- **Python 3.8+**
+- **Python 3.8+** (for Apple Notes integration)
 - **Node.js 14+** (for WhatsApp bot)
+- **Google Chrome** (installed at `/Applications/Google Chrome.app`)
 - **WhatsApp** on your phone
 
 ### 1. Install
 
+See [INSTALL.md](INSTALL.md) for detailed installation instructions.
+
+**Quick install:**
 ```bash
 git clone <your-repo>
 cd task_manager
@@ -38,12 +42,12 @@ cd ..
 ### 2. Run
 
 ```bash
-python3 task_bot.py
+node bot.js
 ```
 
 Or listen to specific WhatsApp group:
 ```bash
-python3 task_bot.py --group "Task Manager"
+WHATSAPP_GROUP="Task Manager" node bot.js
 ```
 
 ### 3. Authenticate
@@ -187,21 +191,23 @@ Notes: Remember both pages of ID
 
 ```
 task_manager/
-├── task_bot.py              # Main bot (350 lines) - WhatsApp + orchestration
-├── apple_notes.py           # Apple Notes client (320 lines) - JXA wrapper
+├── bot.js                   # Main bot (160 lines) - WhatsApp + orchestration
+├── apple_notes.py           # Apple Notes client (300 lines) - JXA wrapper
 ├── tasks.json               # Auto-generated backup
 ├── simple-whatsapp-bot/     # WhatsApp integration (reusable package)
 └── README.md                # This file
 ```
 
-**Total implementation: 2 files, ~670 lines of Python.**
+**Total implementation: 1 JavaScript file + 1 Python helper, ~460 lines total.**
 
 ## 🔧 Architecture
 
 ```
 WhatsApp Messages
        ↓
-   task_bot.py (parses messages)
+   bot.js (Node.js - parses messages)
+       ↓
+   spawns Python subprocess
        ↓
    apple_notes.py (JXA wrapper)
        ↓
@@ -213,6 +219,9 @@ WhatsApp Messages
 ```
 
 **Key Design Decisions:**
+- **JavaScript for WhatsApp** - Uses whatsapp-web.js (best maintained library)
+- **Python for Apple Notes** - Uses JXA via osascript (macOS native)
+- **Bridge via subprocess** - Clean separation, each language does what it's best at
 - **Apple Notes = Primary Storage** - Source of truth, syncs across devices
 - **JSON = Backup** - Fast reads, offline access
 - **No Database** - Simpler, fewer dependencies
@@ -313,13 +322,13 @@ Check:
 
 **Check bot is running:**
 ```bash
-# Should show task_bot.py process
-ps aux | grep task_bot
+# Should show node bot.js process
+ps aux | grep "node bot"
 ```
 
 **Check for errors:**
 - Look at terminal output
-- Python errors will be printed
+- Errors will be printed to console
 
 **Restart:**
 ```bash
@@ -327,7 +336,7 @@ ps aux | grep task_bot
 Ctrl+C
 
 # Restart
-python3 task_bot.py
+node bot.js
 ```
 
 ### Apple Notes Not Working
@@ -357,10 +366,25 @@ If bot stops receiving messages:
 rm -rf .wwebjs_auth .wwebjs_cache
 
 # Restart bot
-python3 task_bot.py
+node bot.js
 
 # Scan QR code again
 ```
+
+### Chrome/Puppeteer Errors
+
+**Error: "spawn Unknown system error -86"**
+
+This happens on Apple Silicon Macs when Chromium binary is x86_64. The bot is configured to use your system Chrome instead.
+
+**Make sure Chrome is installed:**
+```bash
+ls "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+```
+
+**If Chrome is not found**, install it from https://www.google.com/chrome/
+
+**If Chrome is in a different location**, edit bot.js:15-17 to point to your Chrome path.
 
 ### QR Code Won't Scan
 
@@ -375,7 +399,7 @@ python3 task_bot.py
 mv tasks.json tasks.json.backup
 
 # Bot will recreate from Apple Notes on next sync
-python3 task_bot.py
+node bot.js
 ```
 
 ## 🚀 Advanced Usage
@@ -384,13 +408,13 @@ python3 task_bot.py
 
 **Using nohup:**
 ```bash
-nohup python3 task_bot.py --group "Tasks" > bot.log 2>&1 &
+nohup node bot.js > bot.log 2>&1 &
 ```
 
 **Using screen:**
 ```bash
 screen -S taskbot
-python3 task_bot.py
+node bot.js
 # Press Ctrl+A, then D to detach
 ```
 
@@ -405,10 +429,10 @@ Run separate bots for different groups:
 
 ```bash
 # Terminal 1
-python3 task_bot.py --group "Work Tasks"
+WHATSAPP_GROUP="Work Tasks" node bot.js
 
 # Terminal 2
-python3 task_bot.py --group "Family Tasks"
+WHATSAPP_GROUP="Family Tasks" node bot.js
 ```
 
 Each bot maintains its own:
@@ -418,16 +442,19 @@ Each bot maintains its own:
 
 ### Custom Notes Folder
 
-Edit `task_bot.py`:
+Edit `apple_notes.py`:
 ```python
-NOTES_FOLDER = 'My Custom Folder'
+# Change the default folder
+def get_client(folder='My Custom Folder') -> AppleNotesClient:
 ```
+
+Or modify bot.js to pass folder name to Python scripts.
 
 ### Change Sync Interval
 
-Edit `task_bot.py`:
-```python
-SYNC_INTERVAL = 600  # 10 minutes instead of 5
+Edit `bot.js`:
+```javascript
+}, 5*60*1000);  // Change 5 to desired minutes
 ```
 
 ## 📊 Data Storage
@@ -466,19 +493,18 @@ SYNC_INTERVAL = 600  # 10 minutes instead of 5
 
 ### Add Custom Fields
 
-Edit `task_bot.py` → `parse_task()` function:
+Edit `bot.js` → `parseTask()` function:
 
-```python
-field_map = {
-    'title': 'title',
-    'owner': 'owner',
-    'due': 'due',
-    'next': 'next',
-    'priority': 'priority',
-    'notes': 'notes',
-    'location': 'location',  # Add this
-    'cost': 'cost'            # Add this
-}
+```javascript
+const map = {
+    title:'title',
+    owner:'owner',
+    due:'due',
+    next:'next',
+    priority:'priority',
+    location:'location',  // Add this
+    cost:'cost'           // Add this
+};
 ```
 
 Then in WhatsApp:
@@ -492,24 +518,22 @@ Cost: $15
 
 ### Change Emoji
 
-Edit `apple_notes.py` → `create_task()` method:
+Edit `bot.js` → `formatList()` function:
 
-```python
-priority_emoji = {
-    'high': '🔥',      # Change from 🔴
-    'medium': '⭐',    # Change from 🟡
-    'low': '💤'        # Change from 🟢
-}
+```javascript
+const e = {
+    high:'🔥',     // Change from 🔴
+    medium:'⭐',   // Change from 🟡
+    low:'💤'       // Change from 🟢
+}[t.priority] || '🟡';
 ```
 
 ### Custom Reply Messages
 
-Edit `task_bot.py` → `handle_create_task()` method:
+Edit `bot.js` → around line 124:
 
-```python
-reply = f"🎉 Boom! Task created!\n\n"  # Customize this
-reply += f"📝 {task['title']}\n"
-# ... rest of reply
+```javascript
+msg.reply(`🎉 Boom! Task created!\n📝 ${t.title}\n...`);  // Customize this
 ```
 
 ## 🔒 Security Notes
@@ -575,11 +599,14 @@ See [TODO.md](TODO.md) for planned features and workarounds.
 ### Project Structure
 
 ```
-simple-whatsapp-bot/    # Reusable WhatsApp bot package
-├── src/
-│   └── WhatsAppBot.js  # Main bot class
-├── examples/           # Usage examples
-└── package.json
+bot.js                  # Main task manager bot
+├── WhatsAppBot()       # Initialize bot
+├── runPython()         # Bridge to Python
+├── createTask()        # Create via Apple Notes
+├── getAllTasks()       # Read from Apple Notes
+├── markTaskDone()      # Update in Apple Notes
+├── parseTask()         # Parse WhatsApp messages
+└── formatList()        # Format task lists
 
 apple_notes.py          # Apple Notes integration
 ├── AppleNotesClient    # Main client class
@@ -588,20 +615,22 @@ apple_notes.py          # Apple Notes integration
 ├── get_all_tasks()     # Read notes
 └── mark_done()         # Update note
 
-task_bot.py             # Task manager bot
-├── TaskManager         # Main orchestrator
-├── parse_task()        # Parse WhatsApp messages
-├── handle_*()          # Command handlers
-└── sync_notes_to_json() # Sync logic
+simple-whatsapp-bot/    # Reusable WhatsApp bot package
+├── src/
+│   └── WhatsAppBot.js  # Main bot class
+├── examples/           # Usage examples
+└── package.json
 ```
 
 ### Key Technologies
 
+- **Node.js** - Main runtime for WhatsApp bot
+- **whatsapp-web.js** - WhatsApp Web protocol (via Puppeteer)
+- **Puppeteer** - Headless Chrome automation
+- **Python 3** - Apple Notes integration
 - **JXA** (JavaScript for Automation) - macOS scripting
-- **whatsapp-web.js** - WhatsApp Web protocol
-- **subprocess** - Execute osascript
-- **threading** - Background sync timer
-- **json** - Data persistence
+- **child_process.spawn** - Bridge between Node.js and Python
+- **JSON** - Data persistence
 
 ### Code Style
 
